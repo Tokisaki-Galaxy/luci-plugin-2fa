@@ -18,9 +18,7 @@ LUCI_DEPENDS:=+luci-base
 LUCI_PKGARCH:=all
 LUCI_URL:=https://github.com/tokisaki-galaxy/luci-app-2fa
 
-define Package/luci-app-2fa/conffiles
-/etc/config/2fa
-endef
+# No conffiles - configuration is stored in luci_plugins which is managed by luci-base
 
 include $(TOPDIR)/feeds/luci/luci.mk
 

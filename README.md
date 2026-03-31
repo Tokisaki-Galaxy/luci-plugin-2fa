@@ -2,16 +2,11 @@
 
 <img src="https://img.shields.io/badge/OpenWrt-2FA%20Authentication-blue?style=flat-square&logo=openwrt" alt="OpenWrt 2FA" />
 <img src="https://img.shields.io/badge/License-Apache%202.0-green?style=flat-square" alt="License" />
-<img src="https://img.shields.io/badge/LuCI-Web%20Interface-orange?style=flat-square&logo=lua" alt="LuCI" />
+<img src="https://img.shields.io/badge/LuCI-Plugin%20Architecture-orange?style=flat-square&logo=lua" alt="LuCI Plugin" />
 
-# 🔐 [WIP]LuCI-App-2FA
+# 🔐 LuCI-App-2FA
 
-## ⚠️ 需要先通过交互式补丁脚本完成 LuCI 侧改动  need to apply LuCI patch first
-**请先运行：`curl -fsSL https://cdn.jsdelivr.net/gh/Tokisaki-Galaxy/luci-app-2fa@main/luci-patch/install.sh | sh` 进行交互式 patch；相关变更正在上游仓库以 [openwrt/luci#8281](https://github.com/openwrt/luci/pull/8281) PR 推进中。**
-
-**Run first: `curl -fsSL https://cdn.jsdelivr.net/gh/Tokisaki-Galaxy/luci-app-2fa@main/luci-patch/install.sh | sh` to apply LuCI patch interactively; the changes are being upstreamed via [openwrt/luci#8281](https://github.com/openwrt/luci/pull/8281).**
-
-**LuCI 2-Factor Authentication (2FA) app for OpenWrt**
+**LuCI 2-Factor Authentication (2FA) Plugin for OpenWrt**
 
 [English](#english) | [简体中文](#简体中文)
 
@@ -21,39 +16,41 @@
 
 ## English
 
-> **Important:**  
-> This repository **must be used together with the new authentication plugin interface** provided by [openwrt/luci#8281](https://github.com/openwrt/luci/pull/8281).  
-> The PR modifies LuCI's authentication logic to support plugins (see [`luci-patch`](luci-patch/README.md)), which is required for 2FA to work.  
-> If you build LuCI yourself, you need to manually apply the patch in the `luci-patch` directory.
+> **Note:**  
+> This plugin requires LuCI with the **plugin UI architecture** (introduced in commit `617f364`) and the **authentication plugin mechanism**.  
+> These changes are being upstreamed via [openwrt/luci#8281](https://github.com/openwrt/luci/pull/8281).
 
-LuCI 2-Factor Authentication (2FA) app for OpenWrt.
+LuCI 2-Factor Authentication (2FA) plugin for OpenWrt.
 
-This package adds two-factor authentication support to the LuCI web interface, enhancing security by requiring a one-time password (OTP) in addition to the regular username and password.
+This plugin adds two-factor authentication support to the LuCI web interface, enhancing security by requiring a one-time password (OTP) in addition to the regular username and password.
 
 ### ✨ Features
 
-- 🔑 **TOTP (Time-based OTP)**: Requires synchronized time. Compatible with Google Authenticator, Authy, and other TOTP apps.
-- 📴 **HOTP (Counter-based OTP)**: Works offline without requiring time synchronization.
-- 📱 **QR Code Generation**: Easy setup with authenticator apps by scanning a QR code.
-- 🎲 **Base32 Key Generation**: Secure random key generation for OTP secrets.
+- 🔑 **TOTP (Time-based OTP)**: Compatible with Google Authenticator, Authy, and other TOTP apps
+- 📴 **HOTP (Counter-based OTP)**: Works offline without requiring time synchronization
+- 🛡️ **Rate Limiting**: Configurable protection against brute-force attacks
+- 🌐 **IP Whitelist**: Bypass 2FA for trusted networks (e.g., LAN)
+- ⏰ **Time Calibration Check**: Automatic detection of uncalibrated system clock
+- 🔒 **Strict Mode**: Block login when system time is not calibrated
 
-### 📸 Screenshots
+### 🏗️ Architecture
 
-![2FA Settings Page](https://github.com/user-attachments/assets/385ed6de-f30c-4cd1-9881-2516a8c05152)
+This plugin uses LuCI's new **plugin UI architecture**:
+
+- **Backend Plugin**: `/usr/share/ucode/luci/plugins/auth/login/<uuid>.uc`
+- **UI Plugin**: `/www/luci-static/resources/view/plugins/<uuid>.js`
+- **Configuration**: UCI `luci_plugins` config
+
+The plugin integrates into **System → Plugins** menu, providing a consistent experience with other LuCI plugins.
 
 ### 📦 Installation
 
-This plugin **requires the new authentication plugin mechanism** introduced in [openwrt/luci#8281](https://github.com/openwrt/luci/pull/8281).
+#### For LuCI with Plugin Architecture (Recommended)
 
-#### Quick Installation (OpenWrt 23.05+)
-
-For the easiest installation experience, use our automated script that applies the required patches:
+If your LuCI already has the plugin UI architecture and auth plugin mechanism:
 
 ```bash
-# Step 1: Apply LuCI patches (one-time setup)
-curl -fsSL https://cdn.jsdelivr.net/gh/Tokisaki-Galaxy/luci-app-2fa@main/luci-patch/install.sh | sh
-
-# Step 2: Install the 2FA package
+# Install from opkg feed
 wget https://tokisaki-galaxy.github.io/luci-app-2fa/all/key-build.pub -O /tmp/key-build.pub
 opkg-key add /tmp/key-build.pub
 echo "src/gz luci-app-2fa https://tokisaki-galaxy.github.io/luci-app-2fa/all" >> /etc/opkg/customfeeds.conf
@@ -61,58 +58,57 @@ opkg update
 opkg install luci-app-2fa
 ```
 
-#### Manual Installation (Building from Source)
-
-If you are building your own LuCI, you must apply the patch in the [`luci-patch`](luci-patch/) directory:
+#### Building from Source
 
 ```bash
-# In your LuCI source directory
-cd feeds/luci
-patch -p1 < /path/to/luci-app-2fa/luci-patch/0001-add-auth-plugin-mechanism.patch
+# Clone into your OpenWrt package feeds
+git clone https://github.com/Tokisaki-Galaxy/luci-app-2fa.git package/luci-app-2fa
+
+# Enable in menuconfig
+make menuconfig  # Select LuCI → Applications → luci-app-2fa
+
+# Build
+make package/luci-app-2fa/compile V=s
 ```
-
-#### Install from Custom opkg Feed (Legacy)
-
-```bash
-wget https://tokisaki-galaxy.github.io/luci-app-2fa/all/key-build.pub -O /tmp/key-build.pub
-opkg-key add /tmp/key-build.pub
-echo "src/gz luci-app-2fa https://tokisaki-galaxy.github.io/luci-app-2fa/all" >> /etc/opkg/customfeeds.conf
-opkg update
-opkg install luci-app-2fa
-```
-
-#### Manual Installation
-
-1. Download [Release package](https://github.com/Tokisaki-Galaxy/luci-app-2fa/releases)
-2. Uplaod the package to your OpenWrt system and install it
-3. Access LuCI and navigate to System → 2-Factor Auth
 
 ### ⚙️ Configuration
 
-1. Navigate to **System → 2-Factor Auth** in LuCI
-2. Click **Generate Key** to create a new secret key
-3. Scan the QR code with your authenticator app (Google Authenticator, Authy, etc.)
-4. Enable the "Enable 2FA" checkbox
-5. Click **Save & Apply**
+1. Navigate to **System → Plugins** in LuCI
+2. Find **Two-Factor Authentication** plugin
+3. Configure your secret key and enable the plugin
+4. Global plugin system must be enabled: `luci_plugins.global.enabled='1'`
+5. Auth login plugins must be enabled: `luci_plugins.global.auth_login_enabled='1'`
 
 ### 🔧 UCI Configuration
 
-The configuration is stored in `/etc/config/2fa`:
+Configuration is stored in `/etc/config/luci_plugins`:
 
 ```
-config settings 'settings'
-    option enabled '0'
+config globals 'global'
+    option enabled '1'
+    option auth_login_enabled '1'
 
-config login 'root'
-    option key ''
-    option type 'totp'
-    option step '30'
-    option counter '0'
+config plugin 'bb4ea47fcffb44ec9bb3d3673c9b4ed2'
+    option enabled '1'
+    option name 'Two-Factor Authentication'
+    option key_root 'JBSWY3DPEHPK3PXP'
+    option type_root 'totp'
+    option step_root '30'
+    option rate_limit_enabled '1'
+    option rate_limit_max_attempts '5'
+    option rate_limit_window '60'
+    option rate_limit_lockout '300'
 ```
 
-### 🙏 Origin & Credits
+### 🧪 Testing
 
-This package is based on the original upstream implementation:
+Generate an OTP for testing:
+
+```bash
+/usr/libexec/generate_otp.uc root --plugin=bb4ea47fcffb44ec9bb3d3673c9b4ed2
+```
+
+### 🙏 Credits
 
 - **Original PR**: [openwrt/luci#7069](https://github.com/openwrt/luci/pull/7069)
 - **Original Author**: Christian Marangi (ansuelsmth@gmail.com)
@@ -122,34 +118,41 @@ This package is based on the original upstream implementation:
 
 ## 简体中文
 
-OpenWrt 的 LuCI 双因素认证（2FA）应用。
+> **注意：**  
+> 此插件需要具有**插件UI架构**（在提交 `617f364` 中引入）和**认证插件机制**的 LuCI。  
+> 这些更改正在通过 [openwrt/luci#8281](https://github.com/openwrt/luci/pull/8281) 推进上游合并。
 
-此软件包为 LuCI Web 界面添加了双因素认证支持，通过要求输入一次性密码 (OTP) 来增强安全性。
+OpenWrt 的 LuCI 双因素认证（2FA）插件。
+
+此插件为 LuCI Web 界面添加了双因素认证支持，通过要求输入一次性密码 (OTP) 来增强安全性。
 
 ### ✨ 功能特性
 
-- 🔑 **TOTP（基于时间的 OTP）**: 需要时间同步，与 Google Authenticator、Authy 等应用兼容。
-- 📴 **HOTP（基于计数器的 OTP）**: 离线工作，无需时间同步。
-- 📱 **二维码生成**: 通过扫描二维码轻松设置验证器应用。
-- 🎲 **Base32 密钥生成**: 为 OTP 密钥生成安全的随机密钥。
+- 🔑 **TOTP（基于时间的 OTP）**: 与 Google Authenticator、Authy 等应用兼容
+- 📴 **HOTP（基于计数器的 OTP）**: 离线工作，无需时间同步
+- 🛡️ **速率限制**: 可配置的暴力破解防护
+- 🌐 **IP 白名单**: 受信任网络（如局域网）可跳过 2FA
+- ⏰ **时间校准检查**: 自动检测未校准的系统时钟
+- 🔒 **严格模式**: 系统时间未校准时阻止登录
 
-### 📸 界面截图
+### 🏗️ 架构
 
-![2FA 设置页面](https://github.com/user-attachments/assets/385ed6de-f30c-4cd1-9881-2516a8c05152)
+此插件使用 LuCI 的新**插件UI架构**：
+
+- **后端插件**: `/usr/share/ucode/luci/plugins/auth/login/<uuid>.uc`
+- **UI插件**: `/www/luci-static/resources/view/plugins/<uuid>.js`
+- **配置**: UCI `luci_plugins` 配置
+
+插件集成到**系统 → 插件**菜单，与其他 LuCI 插件提供一致的体验。
 
 ### 📦 安装方式
 
-本插件**必须依赖 [openwrt/luci#8281](https://github.com/openwrt/luci/pull/8281) PR 引入的新认证插件机制**。
+#### 适用于具有插件架构的 LuCI（推荐）
 
-#### 快速安装 (OpenWrt 23.05+)
-
-推荐使用自动化脚本进行安装，它会自动应用所需的补丁：
+如果您的 LuCI 已经具有插件UI架构和认证插件机制：
 
 ```bash
-# 步骤 1: 应用 LuCI 补丁（一次性设置）
-curl -fsSL https://cdn.jsdelivr.net/gh/Tokisaki-Galaxy/luci-app-2fa@main/luci-patch/install.sh | sh
-
-# 步骤 2: 安装 2FA 软件包
+# 从 opkg 源安装
 wget https://tokisaki-galaxy.github.io/luci-app-2fa/all/key-build.pub -O /tmp/key-build.pub
 opkg-key add /tmp/key-build.pub
 echo "src/gz luci-app-2fa https://tokisaki-galaxy.github.io/luci-app-2fa/all" >> /etc/opkg/customfeeds.conf
@@ -157,58 +160,57 @@ opkg update
 opkg install luci-app-2fa
 ```
 
-#### 手动安装（从源码编译）
-
-如果你自行编译 LuCI，请在 [`luci-patch`](luci-patch/) 目录下手动打补丁：
+#### 从源码编译
 
 ```bash
-# 在你的 LuCI 源码目录下
-cd feeds/luci
-patch -p1 < /path/to/luci-app-2fa/luci-patch/0001-add-auth-plugin-mechanism.patch
+# 克隆到 OpenWrt 软件包目录
+git clone https://github.com/Tokisaki-Galaxy/luci-app-2fa.git package/luci-app-2fa
+
+# 在 menuconfig 中启用
+make menuconfig  # 选择 LuCI → Applications → luci-app-2fa
+
+# 编译
+make package/luci-app-2fa/compile V=s
 ```
-
-#### 从自定义opkg软件源安装（传统方式）
-
-```bash
-wget https://tokisaki-galaxy.github.io/luci-app-2fa/all/key-build.pub -O /tmp/key-build.pub
-opkg-key add /tmp/key-build.pub
-echo "src/gz luci-app-2fa https://tokisaki-galaxy.github.io/luci-app-2fa/all" >> /etc/opkg/customfeeds.conf
-opkg update
-opkg install luci-app-2fa
-```
-
-#### 离线手动安装
-
-1. 下载 [Release package](https://github.com/Tokisaki-Galaxy/luci-app-2fa/releases)
-2. 将软件包上传到您的 OpenWrt 系统并安装
-3. 访问 LuCI 并导航到 系统 → 双因素认证
 
 ### ⚙️ 配置步骤
 
-1. 在 LuCI 中导航到 **系统 → 双因素认证**
-2. 点击 **生成密钥** 创建新的密钥
-3. 使用您的验证器应用（Google Authenticator、Authy 等）扫描二维码
-4. 勾选 **启用 2FA** 复选框
-5. 点击 **保存并应用**
+1. 在 LuCI 中导航到**系统 → 插件**
+2. 找到**双因素认证**插件
+3. 配置密钥并启用插件
+4. 全局插件系统必须启用: `luci_plugins.global.enabled='1'`
+5. 认证登录插件必须启用: `luci_plugins.global.auth_login_enabled='1'`
 
 ### 🔧 UCI 配置文件
 
-配置保存在 `/etc/config/2fa`:
+配置保存在 `/etc/config/luci_plugins`:
 
 ```
-config settings 'settings'
-    option enabled '0'
+config globals 'global'
+    option enabled '1'
+    option auth_login_enabled '1'
 
-config login 'root'
-    option key ''
-    option type 'totp'
-    option step '30'
-    option counter '0'
+config plugin 'bb4ea47fcffb44ec9bb3d3673c9b4ed2'
+    option enabled '1'
+    option name 'Two-Factor Authentication'
+    option key_root 'JBSWY3DPEHPK3PXP'
+    option type_root 'totp'
+    option step_root '30'
+    option rate_limit_enabled '1'
+    option rate_limit_max_attempts '5'
+    option rate_limit_window '60'
+    option rate_limit_lockout '300'
+```
+
+### 🧪 测试
+
+生成 OTP 用于测试：
+
+```bash
+/usr/libexec/generate_otp.uc root --plugin=bb4ea47fcffb44ec9bb3d3673c9b4ed2
 ```
 
 ### 🙏 致谢与来源
-
-此软件包基于上游官方实现改进：
 
 - **原始 PR**: [openwrt/luci#7069](https://github.com/openwrt/luci/pull/7069)
 - **原始作者**: Christian Marangi (ansuelsmth@gmail.com)
