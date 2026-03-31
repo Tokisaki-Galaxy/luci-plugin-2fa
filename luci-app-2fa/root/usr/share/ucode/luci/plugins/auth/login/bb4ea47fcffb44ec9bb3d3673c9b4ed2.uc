@@ -440,10 +440,8 @@ function get_client_ip(http) {
 	return ip || '';
 }
 
-// Plugin factory function (required by new architecture)
-function create_plugin() {
-	return {
-		priority: 10,
+return {
+	priority: 10,
 
 		check: function(http, user) {
 			let client_ip = get_client_ip(http);
@@ -566,8 +564,5 @@ function create_plugin() {
 			if (client_ip) clear_rate_limit(client_ip);
 			
 			return { success: true };
-		}
-	};
-}
-
-return create_plugin;
+	}
+};

@@ -315,7 +315,7 @@ let username = ARGV[0];
 // Parse optional flags from remaining arguments
 let no_increment = false;
 let custom_time = null;
-let plugin_uuid = null;  // If set, use luci_plugins config instead of 2fa
+let plugin_uuid = null;
 
 for (let i = 1; i < length(ARGV); i++) {
 	let arg = ARGV[i];
