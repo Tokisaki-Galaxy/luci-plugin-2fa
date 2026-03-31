@@ -315,6 +315,7 @@ let username = ARGV[0];
 // Parse optional flags from remaining arguments
 let no_increment = false;
 let custom_time = null;
+let plugin_uuid = null;  // If set, use luci_plugins config instead of 2fa
 
 for (let i = 1; i < length(ARGV); i++) {
 	let arg = ARGV[i];
@@ -330,6 +331,12 @@ for (let i = 1; i < length(ARGV); i++) {
 				custom_time = null;  // Invalid time, use default
 			}
 		}
+	} else if (substr(arg, 0, 9) == '--plugin=') {
+		let uuid_str = substr(arg, 9);
+		// Validate UUID format (32 hex chars)
+		if (match(uuid_str, /^[0-9a-fA-F]{32}$/)) {
+			plugin_uuid = uuid_str;
+		}
 	}
 }
 
@@ -339,9 +346,22 @@ if (!username || username == '') {
 
 let ctx = cursor();
 
-// Get user configuration
-let otp_type = ctx.get('2fa', username, 'type') || 'totp';
-let secret = ctx.get('2fa', username, 'key');
+// Get user configuration - support both 2fa and luci_plugins configs
+let otp_type, secret, counter, step;
+
+if (plugin_uuid) {
+	// New architecture: use luci_plugins config with per-user keys
+	otp_type = ctx.get('luci_plugins', plugin_uuid, 'type_' + username) || 'totp';
+	secret = ctx.get('luci_plugins', plugin_uuid, 'key_' + username);
+	counter = int(ctx.get('luci_plugins', plugin_uuid, 'counter_' + username) || '0');
+	step = int(ctx.get('luci_plugins', plugin_uuid, 'step_' + username) || '30');
+} else {
+	// Legacy: use 2fa config
+	otp_type = ctx.get('2fa', username, 'type') || 'totp';
+	secret = ctx.get('2fa', username, 'key');
+	counter = int(ctx.get('2fa', username, 'counter') || '0');
+	step = int(ctx.get('2fa', username, 'step') || '30');
+}
 
 if (!secret || secret == '') {
 	exit(1);
@@ -351,17 +371,20 @@ let otp;
 
 if (otp_type == 'hotp') {
 	// HOTP mode
-	let counter = int(ctx.get('2fa', username, 'counter') || '0');
 	otp = generate_hotp(secret, counter);
 	
 	// Only increment counter if not in verification mode
 	if (!no_increment) {
-		ctx.set('2fa', username, 'counter', '' + (counter + 1));
-		ctx.commit('2fa');
+		if (plugin_uuid) {
+			ctx.set('luci_plugins', plugin_uuid, 'counter_' + username, '' + (counter + 1));
+			ctx.commit('luci_plugins');
+		} else {
+			ctx.set('2fa', username, 'counter', '' + (counter + 1));
+			ctx.commit('2fa');
+		}
 	}
 } else {
 	// TOTP mode (default)
-	let step = int(ctx.get('2fa', username, 'step') || '30');
 	// Use custom time if provided (for verification with time window tolerance)
 	let timestamp = (custom_time != null) ? custom_time : time();
 	otp = generate_totp(secret, timestamp, step);
