@@ -14,11 +14,9 @@ PKG_MAINTAINER:=tokisaki galaxy <moebest@outlook.jp>
 PKG_DESCRIPTION:=LuCI 2-Factor Authentication Plugin
 
 LUCI_TITLE:=LuCI 2-Factor Authentication
-LUCI_DEPENDS:=+luci-base
+LUCI_DEPENDS:=+luci-base +ucode-mod-struct +ucode-mod-digest
 LUCI_PKGARCH:=all
 LUCI_URL:=https://github.com/tokisaki-galaxy/luci-app-2fa
-
-# No conffiles - configuration is stored in luci_plugins which is managed by luci-base
 
 include $(TOPDIR)/feeds/luci/luci.mk
 

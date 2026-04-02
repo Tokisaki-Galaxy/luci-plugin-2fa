@@ -4,12 +4,6 @@
 'require uci';
 'require rpc';
 
-var callGetSystemUsers = rpc.declare({
-	object: 'luci',
-	method: 'getFeatures',
-	expect: { '': {} }
-});
-
 return baseclass.extend({
 	class: 'auth',
 	class_i18n: _('Authentication'),
