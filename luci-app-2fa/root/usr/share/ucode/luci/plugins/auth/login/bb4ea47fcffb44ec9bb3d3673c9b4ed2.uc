@@ -75,63 +75,101 @@ function sanitize_username(username) {
 function is_valid_ip(ip) {
 	if (!ip || ip == '')
 		return false;
-	// IPv4 pattern - validate each octet is 0-255
-	if (match(ip, /^(\d{1,3}\.){3}\d{1,3}$/)) {
-		let parts = split(ip, '.');
-		for (let i = 0; i < length(parts); i++) {
-			if (int(parts[i]) > 255) return false;
+
+	if (index(ip, '/') >= 0)
+		return parse_cidr(ip) != null;
+
+	return iptoarr(ip) != null;
+}
+
+function parse_cidr(cidr) {
+	let parts = split(cidr, '/');
+	if (length(parts) < 1 || length(parts) > 2)
+		return null;
+
+	let addr = iptoarr(parts[0]);
+	if (!addr)
+		return null;
+
+	let max_prefix = length(addr) * 8;
+	let prefix = max_prefix;
+
+	if (length(parts) == 2) {
+		if (!match(parts[1], /^[0-9]+$/))
+			return null;
+
+		prefix = int(parts[1]);
+		if (prefix < 0 || prefix > max_prefix)
+			return null;
+	}
+
+	return { addr, prefix };
+}
+
+function masked_bytes(bytes, prefix) {
+	let out = [];
+	let bits = prefix;
+
+	for (let b in bytes) {
+		if (bits >= 8) {
+			push(out, b);
+			bits -= 8;
 		}
-		return true;
-	}
-	// IPv4 CIDR pattern
-	if (match(ip, /^(\d{1,3}\.){3}\d{1,3}\/\d{1,2}$/)) {
-		let cidr_parts = split(ip, '/');
-		let prefix = int(cidr_parts[1]);
-		if (prefix < 0 || prefix > 32) return false;
-		let ip_parts = split(cidr_parts[0], '.');
-		for (let i = 0; i < length(ip_parts); i++) {
-			if (int(ip_parts[i]) > 255) return false;
+		else if (bits <= 0) {
+			push(out, 0);
 		}
-		return true;
+		else {
+			let mask = ((0xFF << (8 - bits)) & 0xFF);
+			push(out, b & mask);
+			bits = 0;
+		}
 	}
-	// IPv6 pattern (simplified)
-	if (match(ip, /^[0-9a-fA-F:]+$/) && index(ip, ':') >= 0)
-		return true;
-	// IPv6 CIDR pattern
-	if (match(ip, /^[0-9a-fA-F:]+\/\d{1,3}$/) && index(ip, ':') >= 0) {
-		let cidr_parts = split(ip, '/');
-		let prefix = int(cidr_parts[1]);
-		if (prefix < 0 || prefix > 128) return false;
-		return true;
+
+	return out;
+}
+
+function matches_prefix(addr, network, prefix) {
+	if (length(addr) != length(network))
+		return false;
+
+	let a = masked_bytes(addr, prefix);
+	let n = masked_bytes(network, prefix);
+	for (let i = 0; i < length(a); i++) {
+		if (a[i] != n[i])
+			return false;
 	}
-	return false;
+
+	return true;
+}
+
+function netmask_to_prefix(mask) {
+	let prefix = 0;
+	let zero_seen = false;
+
+	for (let b in mask) {
+		for (let bit = 7; bit >= 0; bit--) {
+			if ((b & (1 << bit)) != 0) {
+				if (zero_seen)
+					return null;
+				prefix++;
+			}
+			else {
+				zero_seen = true;
+			}
+		}
+	}
+
+	return prefix;
 }
 
 // Check if an IP is in a CIDR range
 function ip_in_cidr(ip, cidr) {
-	let parts = split(cidr, '/');
-	let network_ip = parts[0];
-	let prefix = (length(parts) > 1) ? int(parts[1]) : 32;
-
-	// For IPv6, fall back to exact string comparison
-	if (!match(ip, /^(\d{1,3}\.){3}\d{1,3}$/))
-		return ip == network_ip;
-
-	if (!match(network_ip, /^(\d{1,3}\.){3}\d{1,3}$/))
+	let addr = iptoarr(ip);
+	let network = parse_cidr(cidr);
+	if (!addr || !network)
 		return false;
 
-	let ip_parts = split(ip, '.');
-	let net_parts = split(network_ip, '.');
-
-	let ip_int = (int(ip_parts[0]) << 24) | (int(ip_parts[1]) << 16) | (int(ip_parts[2]) << 8) | int(ip_parts[3]);
-	let net_int = (int(net_parts[0]) << 24) | (int(net_parts[1]) << 16) | (int(net_parts[2]) << 8) | int(net_parts[3]);
-
-	let mask = 0;
-	if (prefix > 0) {
-		mask = (0xFFFFFFFF << (32 - prefix)) & 0xFFFFFFFF;
-	}
-
-	return ((ip_int & mask) == (net_int & mask));
+	return matches_prefix(addr, network.addr, network.prefix);
 }
 
 // Check if IP is in whitelist
@@ -182,19 +220,10 @@ function get_lan_subnets() {
 			if (status && status['ipv4-address']) {
 				for (let addr in status['ipv4-address']) {
 					if (addr.address && addr.mask) {
-						let ip_parts = split(addr.address, '.');
-						if (length(ip_parts) == 4) {
-							let mask = int(addr.mask);
-							let ip_int = (int(ip_parts[0]) << 24) | (int(ip_parts[1]) << 16) | (int(ip_parts[2]) << 8) | int(ip_parts[3]);
-							let net_mask = (0xFFFFFFFF << (32 - mask)) & 0xFFFFFFFF;
-							let net_int = ip_int & net_mask;
-							let net_addr = sprintf('%d.%d.%d.%d',
-								(net_int >> 24) & 0xFF,
-								(net_int >> 16) & 0xFF,
-								(net_int >> 8) & 0xFF,
-								net_int & 0xFF);
-							push(subnets, net_addr + '/' + mask);
-						}
+						let ip_addr = iptoarr(addr.address);
+						let mask = int(addr.mask);
+						if (ip_addr && length(ip_addr) == 4 && mask >= 0 && mask <= 32)
+							push(subnets, arrtoip(masked_bytes(ip_addr, mask)) + '/' + mask);
 					}
 				}
 			}
@@ -208,26 +237,12 @@ function get_lan_subnets() {
 		let lan_netmask = ctx.get('network', 'lan', 'netmask');
 
 		if (lan_ipaddr && lan_netmask) {
-			let mask_parts = split(lan_netmask, '.');
-			if (length(mask_parts) == 4) {
-				let mask_int = (int(mask_parts[0]) << 24) | (int(mask_parts[1]) << 16) | (int(mask_parts[2]) << 8) | int(mask_parts[3]);
-				let prefix = 0;
-				for (let i = 31; i >= 0; i--) {
-					if ((mask_int >> i) & 1) prefix++;
-					else break;
-				}
-
-				let ip_parts = split(lan_ipaddr, '.');
-				if (length(ip_parts) == 4) {
-					let ip_int = (int(ip_parts[0]) << 24) | (int(ip_parts[1]) << 16) | (int(ip_parts[2]) << 8) | int(ip_parts[3]);
-					let net_int = ip_int & mask_int;
-					let net_addr = sprintf('%d.%d.%d.%d',
-						(net_int >> 24) & 0xFF,
-						(net_int >> 16) & 0xFF,
-						(net_int >> 8) & 0xFF,
-						net_int & 0xFF);
-					push(subnets, net_addr + '/' + prefix);
-				}
+			let ip_addr = iptoarr(lan_ipaddr);
+			let mask_addr = iptoarr(lan_netmask);
+			if (ip_addr && mask_addr && length(ip_addr) == 4 && length(mask_addr) == 4) {
+				let prefix = netmask_to_prefix(mask_addr);
+				if (prefix != null)
+					push(subnets, arrtoip(masked_bytes(ip_addr, prefix)) + '/' + prefix);
 			}
 		}
 	}
@@ -240,7 +255,8 @@ function is_local_subnet(ip) {
 	if (!ip || ip == '')
 		return false;
 
-	if (!match(ip, /^(\d{1,3}\.){3}\d{1,3}$/))
+	let ip_addr = iptoarr(ip);
+	if (!ip_addr || length(ip_addr) != 4)
 		return false;
 
 	let lan_subnets = get_lan_subnets();
