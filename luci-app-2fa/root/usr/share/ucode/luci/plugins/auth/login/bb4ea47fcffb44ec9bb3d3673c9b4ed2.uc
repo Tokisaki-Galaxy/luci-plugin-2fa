@@ -11,6 +11,7 @@
 'use strict';
 
 import { popen, readfile, writefile, open } from 'fs';
+import { connect } from 'ubus';
 import { cursor } from 'uci';
 
 const PLUGIN_UUID = 'bb4ea47fcffb44ec9bb3d3673c9b4ed2';
@@ -27,6 +28,7 @@ const RATE_LIMIT_FILE = '/tmp/2fa_rate_limit.json';
 const RATE_LIMIT_LOCK_FILE = '/tmp/2fa_rate_limit.lock';
 const DEFAULT_PRIORITY = 15;
 let RATE_LIMIT_LOCK_HANDLE = null;
+let ubus = connect();
 
 function get_priority() {
 	let ctx = cursor();
@@ -209,23 +211,15 @@ function is_ip_whitelisted(ip) {
 function get_lan_subnets() {
 	let subnets = [];
 
-	// Try ubus call to get LAN interface status
-	let fd = popen('ubus call network.interface.lan status 2>/dev/null', 'r');
-	if (fd) {
-		let output = fd.read('all');
-		fd.close();
-
-		if (output) {
-			let status = json(output);
-			if (status && status['ipv4-address']) {
-				for (let addr in status['ipv4-address']) {
-					if (addr.address && addr.mask) {
-						let ip_addr = iptoarr(addr.address);
-						let mask = int(addr.mask);
-						if (ip_addr && length(ip_addr) == 4 && mask >= 0 && mask <= 32)
-							push(subnets, arrtoip(masked_bytes(ip_addr, mask)) + '/' + mask);
-					}
-				}
+	// Prefer native ubus access over shelling out.
+	let status = ubus?.call('network.interface.lan', 'status', {});
+	if (status?.['ipv4-address']) {
+		for (let addr in status['ipv4-address']) {
+			if (addr.address && addr.mask) {
+				let ip_addr = iptoarr(addr.address);
+				let mask = int(addr.mask);
+				if (ip_addr && length(ip_addr) == 4 && mask >= 0 && mask <= 32)
+					push(subnets, arrtoip(masked_bytes(ip_addr, mask)) + '/' + mask);
 			}
 		}
 	}
