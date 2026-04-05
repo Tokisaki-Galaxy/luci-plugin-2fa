@@ -658,12 +658,12 @@ return {
 			let client_ip = get_client_ip(http);
 
 			// Check if IP is whitelisted
-		if (client_ip && is_ip_whitelisted(client_ip)) {
-			syslog(LOG_INFO|LOG_AUTHPRIV,
-				sprintf("luci: 2FA bypassed for %s from %s due to IP whitelist",
+			if (client_ip && is_ip_whitelisted(client_ip)) {
+				syslog(LOG_INFO|LOG_AUTHPRIV,
+					sprintf("luci: 2FA bypassed for %s from %s due to IP whitelist",
 					user || '?', client_ip || '?'));
-			return { success: true, whitelisted: true };
-		}
+				return { success: true, whitelisted: true };
+			}
 
 			// Reserve rate limit attempt atomically
 			if (client_ip) {
