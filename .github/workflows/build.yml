@@ -10,7 +10,7 @@ on:
 
 env:
   OPENWRT_VERSION: v24.10.3
-  PACKAGE_NAME: luci-app-2fa
+  PACKAGE_NAME: luci-plugin-2fa
   SDK_DIR: /home/runner/work/openwrt-sdk
 
 permissions:

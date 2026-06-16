@@ -1,5 +1,5 @@
 #!/bin/bash
-# Backend Tests for luci-app-2fa (plugin architecture)
+# Backend Tests for luci-plugin-2fa (plugin architecture)
 set -e
 
 CONTAINER_NAME="${1:-openwrt-luci-test}"
@@ -27,7 +27,7 @@ check_container() {
 }
 
 deploy_files() {
-    log_info "Deploying luci-app-2fa files to container..."
+    log_info "Deploying luci-plugin-2fa files to container..."
 
     docker exec "$CONTAINER_NAME" mkdir -p \
         /usr/libexec \
@@ -35,20 +35,20 @@ deploy_files() {
         /www/luci-static/resources/view/plugins \
         /etc/uci-defaults
 
-    docker cp "$REPO_ROOT/luci-app-2fa/root/usr/libexec/generate_otp.uc" \
+    docker cp "$REPO_ROOT/luci-plugin-2fa/root/usr/libexec/generate_otp.uc" \
         "$CONTAINER_NAME:/usr/libexec/generate_otp.uc"
     docker exec "$CONTAINER_NAME" chmod +x /usr/libexec/generate_otp.uc
 
-    docker cp "$REPO_ROOT/luci-app-2fa/root/usr/share/ucode/luci/plugins/auth/login/${PLUGIN_UUID}.uc" \
+    docker cp "$REPO_ROOT/luci-plugin-2fa/root/usr/share/ucode/luci/plugins/auth/login/${PLUGIN_UUID}.uc" \
         "$CONTAINER_NAME:/usr/share/ucode/luci/plugins/auth/login/${PLUGIN_UUID}.uc"
 
-    docker cp "$REPO_ROOT/luci-app-2fa/root/www/luci-static/resources/view/plugins/${PLUGIN_UUID}.js" \
+    docker cp "$REPO_ROOT/luci-plugin-2fa/root/www/luci-static/resources/view/plugins/${PLUGIN_UUID}.js" \
         "$CONTAINER_NAME:/www/luci-static/resources/view/plugins/${PLUGIN_UUID}.js"
 
-    docker cp "$REPO_ROOT/luci-app-2fa/root/etc/uci-defaults/luci-app-2fa" \
-        "$CONTAINER_NAME:/etc/uci-defaults/luci-app-2fa"
+    docker cp "$REPO_ROOT/luci-plugin-2fa/root/etc/uci-defaults/luci-plugin-2fa" \
+        "$CONTAINER_NAME:/etc/uci-defaults/luci-plugin-2fa"
 
-    docker exec "$CONTAINER_NAME" sh -c 'chmod +x /etc/uci-defaults/luci-app-2fa && /etc/uci-defaults/luci-app-2fa'
+    docker exec "$CONTAINER_NAME" sh -c 'chmod +x /etc/uci-defaults/luci-plugin-2fa && /etc/uci-defaults/luci-plugin-2fa'
 
     docker exec "$CONTAINER_NAME" sh -c '
         uci set luci_plugins.global=global
@@ -125,7 +125,7 @@ test_login_page_has_otp() {
 
 main() {
     echo "========================================"
-    echo "  luci-app-2fa Backend Tests"
+    echo "  luci-plugin-2fa Backend Tests"
     echo "========================================"
 
     check_container

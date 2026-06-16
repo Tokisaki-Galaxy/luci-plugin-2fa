@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# luci-app-2fa: Setup script for two-factor authentication plugin
+# luci-plugin-2fa: Setup script for two-factor authentication plugin
 # This script sets up the 2FA plugin configuration in luci_plugins
 
 PLUGIN_UUID="bb4ea47fcffb44ec9bb3d3673c9b4ed2"

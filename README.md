@@ -4,7 +4,7 @@
 <img src="https://img.shields.io/badge/License-Apache%202.0-green?style=flat-square" alt="License" />
 <img src="https://img.shields.io/badge/LuCI-Plugin%20Architecture-orange?style=flat-square&logo=lua" alt="LuCI Plugin" />
 
-# 🔐 LuCI-App-2FA
+# 🔐 luci-plugin-2fa
 
 **LuCI 2-Factor Authentication (2FA) Plugin for OpenWrt**
 
@@ -51,24 +51,24 @@ If your LuCI already has the plugin UI architecture and auth plugin mechanism:
 
 ```bash
 # Install from opkg feed
-wget https://tokisaki-galaxy.github.io/luci-app-2fa/all/key-build.pub -O /tmp/key-build.pub
+wget https://tokisaki-galaxy.github.io/luci-plugin-2fa/all/key-build.pub -O /tmp/key-build.pub
 opkg-key add /tmp/key-build.pub
-echo "src/gz luci-app-2fa https://tokisaki-galaxy.github.io/luci-app-2fa/all" >> /etc/opkg/customfeeds.conf
+echo "src/gz luci-plugin-2fa https://tokisaki-galaxy.github.io/luci-plugin-2fa/all" >> /etc/opkg/customfeeds.conf
 opkg update
-opkg install luci-app-2fa
+opkg install luci-plugin-2fa
 ```
 
 #### Building from Source
 
 ```bash
 # Clone into your OpenWrt package feeds
-git clone https://github.com/Tokisaki-Galaxy/luci-app-2fa.git package/luci-app-2fa
+git clone https://github.com/Tokisaki-Galaxy/luci-plugin-2fa.git package/luci-plugin-2fa
 
 # Enable in menuconfig
-make menuconfig  # Select LuCI → Applications → luci-app-2fa
+make menuconfig  # Select LuCI → Applications → luci-plugin-2fa
 
 # Build
-make package/luci-app-2fa/compile V=s
+make package/luci-plugin-2fa/compile V=s
 ```
 
 ### ⚙️ Configuration
@@ -156,24 +156,24 @@ OpenWrt 的 LuCI 双因素认证（2FA）插件。
 
 ```bash
 # 从 opkg 源安装
-wget https://tokisaki-galaxy.github.io/luci-app-2fa/all/key-build.pub -O /tmp/key-build.pub
+wget https://tokisaki-galaxy.github.io/luci-plugin-2fa/all/key-build.pub -O /tmp/key-build.pub
 opkg-key add /tmp/key-build.pub
-echo "src/gz luci-app-2fa https://tokisaki-galaxy.github.io/luci-app-2fa/all" >> /etc/opkg/customfeeds.conf
+echo "src/gz luci-plugin-2fa https://tokisaki-galaxy.github.io/luci-plugin-2fa/all" >> /etc/opkg/customfeeds.conf
 opkg update
-opkg install luci-app-2fa
+opkg install luci-plugin-2fa
 ```
 
 #### 从源码编译
 
 ```bash
 # 克隆到 OpenWrt 软件包目录
-git clone https://github.com/Tokisaki-Galaxy/luci-app-2fa.git package/luci-app-2fa
+git clone https://github.com/Tokisaki-Galaxy/luci-plugin-2fa.git package/luci-plugin-2fa
 
 # 在 menuconfig 中启用
-make menuconfig  # 选择 LuCI → Applications → luci-app-2fa
+make menuconfig  # 选择 LuCI → Applications → luci-plugin-2fa
 
 # 编译
-make package/luci-app-2fa/compile V=s
+make package/luci-plugin-2fa/compile V=s
 ```
 
 ### ⚙️ 配置步骤

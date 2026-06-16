@@ -1,5 +1,5 @@
 {
-  "name": "luci-app-2fa",
+  "name": "luci-plugin-2fa",
   "version": "1.0.0",
   "private": true,
   "type": "module",

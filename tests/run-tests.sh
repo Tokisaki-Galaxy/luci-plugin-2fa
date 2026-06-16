@@ -51,7 +51,7 @@ start_container() {
 }
 
 deploy_plugin() {
-    log_info "Deploying luci-app-2fa plugin files..."
+    log_info "Deploying luci-plugin-2fa plugin files..."
 
     docker exec "$CONTAINER_NAME" mkdir -p \
         /usr/libexec \
@@ -59,16 +59,16 @@ deploy_plugin() {
         /www/luci-static/resources/view/plugins \
         /etc/uci-defaults
 
-    docker cp "$REPO_ROOT/luci-app-2fa/root/usr/libexec/generate_otp.uc" "$CONTAINER_NAME:/usr/libexec/generate_otp.uc"
+    docker cp "$REPO_ROOT/luci-plugin-2fa/root/usr/libexec/generate_otp.uc" "$CONTAINER_NAME:/usr/libexec/generate_otp.uc"
     docker exec "$CONTAINER_NAME" chmod +x /usr/libexec/generate_otp.uc
 
-    docker cp "$REPO_ROOT/luci-app-2fa/root/usr/share/ucode/luci/plugins/auth/login/$PLUGIN_UUID.uc" \
+    docker cp "$REPO_ROOT/luci-plugin-2fa/root/usr/share/ucode/luci/plugins/auth/login/$PLUGIN_UUID.uc" \
         "$CONTAINER_NAME:/usr/share/ucode/luci/plugins/auth/login/$PLUGIN_UUID.uc"
-    docker cp "$REPO_ROOT/luci-app-2fa/root/www/luci-static/resources/view/plugins/$PLUGIN_UUID.js" \
+    docker cp "$REPO_ROOT/luci-plugin-2fa/root/www/luci-static/resources/view/plugins/$PLUGIN_UUID.js" \
         "$CONTAINER_NAME:/www/luci-static/resources/view/plugins/$PLUGIN_UUID.js"
-    docker cp "$REPO_ROOT/luci-app-2fa/root/etc/uci-defaults/luci-app-2fa" "$CONTAINER_NAME:/etc/uci-defaults/luci-app-2fa"
+    docker cp "$REPO_ROOT/luci-plugin-2fa/root/etc/uci-defaults/luci-plugin-2fa" "$CONTAINER_NAME:/etc/uci-defaults/luci-plugin-2fa"
 
-    docker exec "$CONTAINER_NAME" sh -c 'chmod +x /etc/uci-defaults/luci-app-2fa && /etc/uci-defaults/luci-app-2fa'
+    docker exec "$CONTAINER_NAME" sh -c 'chmod +x /etc/uci-defaults/luci-plugin-2fa && /etc/uci-defaults/luci-plugin-2fa'
     docker exec "$CONTAINER_NAME" sh -c '
         uci set luci_plugins.global=global
         uci set luci_plugins.global.enabled=1

@@ -133,7 +133,7 @@ docker exec openwrt-luci wget -q -O - http://127.0.0.1/cgi-bin/luci/ | grep -E '
 ### Plugin 架构迁移注意事项
 
 #### 配置映射
-- **旧架构** (luci-app-2fa): `2fa` UCI config with 节点 `settings` 和 per-user 节点
+- **旧架构** (luci-plugin-2fa): `2fa` UCI config with 节点 `settings` 和 per-user 节点
 - **新架构** (master plugin): `luci_plugins` UCI config with plugin UUID 节点，per-user keys: `key_<user>`, `type_<user>`, `step_<user>`, `counter_<user>`
 
 #### 文件路径映射
