@@ -1,0 +1,17 @@
+Package: luci-plugin-2fa
+Version: 2.0.0-r1
+Depends: libc, luci-base, luci-lib-uqr, ucode-mod-struct, ucode-mod-digest, ucode-mod-log
+Source: feeds/base/luci-plugin-2fa
+SourceName: luci-plugin-2fa
+License: Apache-2.0
+Section: luci
+SourceDateEpoch: 1758316778
+URL: https://github.com/tokisaki-galaxy/luci-plugin-2fa
+Maintainer: OpenWrt LuCI community
+Architecture: all
+Installed-Size: 51200
+Description:  LuCI 2-Factor Authentication
+Filename: luci-plugin-2fa_2.0.0-r1_all.ipk
+Size: 9873
+SHA256sum: 5295a4a36dcbfb518f70264597d0b177f77723b3871db0cce6fbd48e6adb1a82
+
